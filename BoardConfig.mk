@@ -148,11 +148,6 @@ TARGET_TAP_TO_WAKE_NODE := "/dev/input/event3"
 # Enable Virtual A/B
 ENABLE_VIRTUAL_AB := true
 
-# Manifest
-DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE := vendor/qcom/opensource/core-utils/vendor_framework_compatibility_matrix.xml
-DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/vintf/manifest.xml
-DEVICE_MATRIX_FILE := $(DEVICE_PATH)/vintf/compatibility_matrix.xml
-
 # RIL
 ENABLE_VENDOR_RIL_SERVICE := true
 
