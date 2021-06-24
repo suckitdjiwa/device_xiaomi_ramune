@@ -74,19 +74,7 @@ TARGET_INIT_VENDOR_LIB := //$(DEVICE_PATH):libinit_ramune
 TARGET_RECOVERY_DEVICE_MODULES := libinit_ramune
 
 # Kernel
-BOARD_KERNEL_CMDLINE := \
-    console=ttyMSM0,115200n8 \
-    earlycon=msm_geni_serial,0x4a90000 \
-    androidboot.hardware=qcom \
-    androidboot.console=ttyMSM0 \
-    androidboot.memcg=1 \
-    lpm_levels.sleep_disabled=1 \
-    video=vfb:640x400,bpp=32,memsize=3072000 \
-    msm_rtb.filter=0x237 \
-    service_locator.enable=1 \
-    swiotlb=2048 \
-    loop.max_part=7
-
+BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200n8 earlycon=msm_geni_serial,0x4a90000 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 swiotlb=2048 loop.max_part=7
 BOARD_KERNEL_CMDLINE += androidboot.selinux=permissive
 BOARD_KERNEL_CMDLINE += androidboot.fstab_suffix=default
 BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery
@@ -96,18 +84,23 @@ BOARD_RAMDISK_OFFSET := 0x01000000
 BOARD_KERNEL_SECOND_OFFSET := 0xf00000
 BOARD_KERNEL_TAGS_OFFSET := 0x00000100
 BOARD_KERNEL_OFFSET := 0x00008000
+BOARD_KERNEL_IMAGE_NAME := Image.gz
+TARGET_KERNEL_ARCH := arm64
+TARGET_KERNEL_HEADERS := kernel/xiaomi/sm6115
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
 TARGET_PREBUILT_DTB := $(DEVICE_PATH)/prebuilt/dtb
-BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
-BOARD_MKBOOTIMG_ARGS += --dtb $(TARGET_PREBUILT_DTB)
-TARGET_KERNEL_CONFIG := vendor/bengal-perf_defconfig
-TARGET_USES_UNCOMPRESSED_KERNEL := true
-BOARD_BOOTIMG_HEADER_VERSION := 2
-BOARD_INCLUDE_DTB_IN_BOOTIMG := true
-BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOTIMG_HEADER_VERSION)
 BOARD_KERNEL_SEPARATED_DTBO := true
 TARGET_KERNEL_VERSION := 4.19
-KERNEL_LLVM_SUPPORT := true
-TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
+BOARD_BOOTIMG_HEADER_VERSION := 2
+BOARD_MKBOOTIMG_ARGS := --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --kernel_offset $(BOARD_KERNEL_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --second_offset $(BOARD_KERNEL_SECOND_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --base $(BOARD_KERNEL_BASE)
+BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOTIMG_HEADER_VERSION)
+BOARD_MKBOOTIMG_ARGS += --dtb $(TARGET_PREBUILT_DTB)
+BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE) --board ""
 
 # Metadata
 BOARD_USES_METADATA_PARTITION := true
@@ -125,12 +118,27 @@ BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions
 BOARD_QTI_DYNAMIC_PARTITIONS_PARTITION_LIST := system system_ext product
 BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := 8589934592
 
+BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE := f2fs
+BOARD_PRODUCTIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_SYSTEM_EXTIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE := ext4
+
+BOARD_USES_SYSTEM_EXTIMAGE := true
+BOARD_USES_PRODUCTIMAGE := true
+
 TARGET_COPY_OUT_SYSTEM_EXT := system_ext
 TARGET_COPY_OUT_VENDOR := vendor
 TARGET_COPY_OUT_PRODUCT := product
 
+BUILD_WITHOUT_VENDOR := true
+
 # Properties
 TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
+
+# Power
+TARGET_USES_INTERACTION_BOOST := true
+TARGET_TAP_TO_WAKE_NODE := "/dev/input/event3"
 
 # Enable Virtual A/B
 ENABLE_VIRTUAL_AB := true
@@ -162,9 +170,6 @@ BOARD_SYSTEMSDK_VERSIONS := 29
 
 # VNDK
 BOARD_VNDK_VERSION := current
-
-# WLAN
-include device/qcom/wlan/bengal/BoardConfigWlan.mk
 
 BOARD_WLAN_DEVICE := qcwcn
 BOARD_HOSTAPD_DRIVER := NL80211

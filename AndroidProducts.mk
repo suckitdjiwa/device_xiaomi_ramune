@@ -10,4 +10,4 @@ PRODUCT_MAKEFILES := \
 COMMON_LUNCH_CHOICES := \
     lineage_ramune-user \
     lineage_ramune-userdebug \
-    lineage_ramunen-eng
+    lineage_ramune-eng

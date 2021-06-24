@@ -1,7 +1,6 @@
 /*
-   Copyright (c) 2015, The Linux Foundation. All rights reserved.
-   Copyright (C) 2016 The CyanogenMod Project.
-   Copyright (C) 2019-2020 The LineageOS Project.
+   Copyright (c) 2016, The CyanogenMod Project
+   Copyright (c) 2019, The LineageOS Project
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
    met:
@@ -27,7 +26,10 @@
    IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdlib>
 #include <fstream>
+#include <string.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 #include <vector>
 
@@ -35,13 +37,22 @@
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
 
-#include "property_service.h"
+
 #include "vendor_init.h"
 
 using android::base::GetProperty;
+using android::base::SetProperty;
+
+char const *heapstartsize;
+char const *heapgrowthlimit;
+char const *heapsize;
+char const *heapminfree;
+char const *heapmaxfree;
+char const *heaptargetutilization;
 
 std::vector<std::string> ro_props_default_source_order = {
     "",
+    "odm.",
     "product.",
     "system.",
     "vendor.",
@@ -52,31 +63,114 @@ void property_override(char const prop[], char const value[], bool add = true) {
 
     pi = (prop_info *)__system_property_find(prop);
     if (pi)
-        __system_property_update(pi, value, strlen(value));
+    __system_property_update(pi, value, strlen(value));
     else if (add)
-        __system_property_add(prop, strlen(prop), value, strlen(value));
+    __system_property_add(prop, strlen(prop), value, strlen(value));
 }
 
-void vendor_load_properties() {
-    const auto set_ro_build_prop = [](const std::string &source,
-                                      const std::string &prop,
-                                      const std::string &value) {
-        auto prop_name = "ro." + source + "build." + prop;
-        property_override(prop_name.c_str(), value.c_str(), false);
-    };
+void set_ro_build_prop(const std::string &source, const std::string &prop,
+                       const std::string &value, bool product = false) {
+    std::string prop_name;
 
-    const auto set_ro_product_prop = [](const std::string &source,
-                                        const std::string &prop,
-                                        const std::string &value) {
-        auto prop_name = "ro.product." + source + prop;
-        property_override(prop_name.c_str(), value.c_str(), false);
-    };
-
-    for (const auto &source : ro_props_default_source_order) {
-        set_ro_build_prop(source, "fingerprint",
-                          "xiaomi/lime_global/lime:10/QKQ1.200830.002/V12.0.3.0.QJFMIXM:user/release-keys");
-        set_ro_product_prop(source, "brand", "Xiaomi");
-        set_ro_product_prop(source, "device", "ramune");
-        set_ro_product_prop(source, "model", "POCO M3 / Redmi 9T");
+    if (product) {
+        prop_name = "ro.product." + source + prop;
+    } else {
+        prop_name = "ro." + source + "build." + prop;
     }
+
+    property_override(prop_name.c_str(), value.c_str(), false);
+}
+
+void set_device_props(const std::string fingerprint, const std::string description,
+                      const std::string brand, const std::string device, const std::string model) {
+    for (const auto &source : ro_props_default_source_order) {
+        set_ro_build_prop(source, "fingerprint", fingerprint);
+        set_ro_build_prop(source, "brand", brand, true);
+        set_ro_build_prop(source, "device", device, true);
+        set_ro_build_prop(source, "model", model, true);
+    }
+
+    property_override("ro.build.fingerprint", fingerprint.c_str());
+    property_override("ro.build.description", description.c_str());
+}
+
+void load_device_properties() {
+    std::string hwname = GetProperty("ro.boot.hwname", "");
+    std::string region = GetProperty("ro.boot.hwc", "");
+
+    if (hwname == "lime") {
+        if (region == "Global_TWO") {
+            set_device_props(
+                             "Redmi/lime_global/lime:10/QKQ1.200830.002/V12.0.4.0.QJQMIXM:user/release-keys",
+                             "qssi-user-11-RKQ1.201004.002-21.3.17-release-keys",
+                             "Redmi", "lime", "Redmi 9T");
+        } else if (region == "India") {
+            set_device_props(
+                             "Redmi/lime_global/lime:10/QKQ1.200830.002/V12.0.4.0.QJQMIXM:user/release-keys",
+                             "qssi-user-11-RKQ1.201004.002-21.3.17-release-keys",
+                             "Redmi", "lime", "Redmi 9 Power");
+        }
+    } else if (hwname == "lemon") {
+        set_device_props(
+                             "Redmi/lemon_global/lemon:10/QKQ1.200830.002/V12.0.4.0.QJQMIXM:user/release-keys",
+                             "qssi-user-11-RKQ1.201004.002-21.3.17-release-keys",
+                             "Redmi", "lemon", "Redmi 9T");
+    } else if (hwname == "pomelo") {
+        set_device_props(
+                             "Redmi/pomelo_global/pomelo:10/QKQ1.200830.002/V12.0.4.0.QJQMIXM:user/release-keys",
+                             "qssi-user-11-RKQ1.201004.002-21.3.17-release-keys",
+                             "Redmi", "pomelo", "Redmi 9T");
+    } else if (hwname == " citrus") {
+        set_device_props(
+                         "POCO/citrus_global/citrus:10/QKQ1.200830.002/V12.0.3.0.QJFMIXM:user/release-keys",
+                         "qssi-user-10-QKQ1.200830.002-1w.0.4-release-keys",
+                         "POCO", "citrus", "POCO M3");
+    }
+}
+
+void check_device()
+{
+    struct sysinfo sys;
+
+    sysinfo(&sys);
+
+    if (sys.totalram > 5072ull * 1024 * 1024) {
+        // from - phone-xhdpi-6144-dalvik-heap.mk
+        heapstartsize = "16m";
+        heapgrowthlimit = "256m";
+        heapsize = "512m";
+        heaptargetutilization = "0.5";
+        heapminfree = "8m";
+        heapmaxfree = "32m";
+    } else if (sys.totalram > 3072ull * 1024 * 1024) {
+        // from - phone-xxhdpi-4096-dalvik-heap.mk
+        heapstartsize = "8m";
+        heapgrowthlimit = "256m";
+        heapsize = "512m";
+        heaptargetutilization = "0.6";
+        heapminfree = "8m";
+        heapmaxfree = "16m";
+    } else {
+        // from - phone-xhdpi-2048-dalvik-heap.mk
+        heapstartsize = "8m";
+        heapgrowthlimit = "192m";
+        heapsize = "512m";
+        heaptargetutilization = "0.75";
+        heapminfree = "512k";
+        heapmaxfree = "8m";
+    }
+}
+
+void vendor_load_properties()
+{
+    check_device();
+
+    SetProperty("dalvik.vm.heapstartsize", heapstartsize);
+    SetProperty("dalvik.vm.heapgrowthlimit", heapgrowthlimit);
+    SetProperty("dalvik.vm.heapsize", heapsize);
+    SetProperty("dalvik.vm.heaptargetutilization", heaptargetutilization);
+    SetProperty("dalvik.vm.heapminfree", heapminfree);
+    SetProperty("dalvik.vm.heapmaxfree", heapmaxfree);
+
+    load_device_properties();
 }

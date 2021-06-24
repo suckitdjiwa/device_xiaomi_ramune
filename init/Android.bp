@@ -13,13 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 cc_library_static {
-    name: "libinit_juice",
-    srcs: ["init_juice.cpp"],
+    name: "libinit_ramune",
     recovery_available: true,
-    whole_static_libs: ["libbase"],
+    srcs: ["init_ramune.cpp"],
     include_dirs: [
         "system/core/base/include",
         "system/core/init"
     ]
-}
+} 
