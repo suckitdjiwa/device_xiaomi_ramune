@@ -15,9 +15,6 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 # GSI
 $(call inherit-product, $(SRC_TARGET_DIR)/product/developer_gsi_keys.mk)
 
-# Inherit from vendor if exists
-$(call inherit-product-if-exists, vendor/xiaomi/ramune/ramune-vendor.mk)
-
 # Board
 TARGET_BOARD_PLATFORM := bengal
 
@@ -140,3 +137,5 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/wlan/WCNSS_qcom_cfg.ini:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/WCNSS_qcom_cfg.ini \
     $(LOCAL_PATH)/wlan/p2p_supplicant_overlay.conf:$(TARGET_COPY_OUT_VENDOR)/etc/wifi/p2p_supplicant_overlay.conf \
 
+# Inherit from vendor blobs
+$(call inherit-product, vendor/xiaomi/ramune/ramune-vendor.mk)
